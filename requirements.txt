@@ -1,0 +1,4 @@
+Flask
+chatterbot
+chatterbot-corpus
+spacy

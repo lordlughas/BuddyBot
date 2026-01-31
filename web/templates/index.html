@@ -1,0 +1,47 @@
+<!-- <h1>BuddyBot is running 🚀</h1> -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>BuddyBot</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="chat-container">
+        <h2>BuddyBot 🤖</h2>
+
+        <div id="chat-box"></div>
+
+        <input id="user-input" type="text" placeholder="Type a message..." />
+        <button onclick="sendMessage()">Send</button>
+    </div>
+
+    <script>
+        async function sendMessage() {
+            const input = document.getElementById("user-input");
+            const message = input.value;
+            if (!message) return;
+
+            addMessage("You", message);
+            input.value = "";
+
+            const response = await fetch("/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message })
+            });
+
+            const data = await response.json();
+            addMessage("BuddyBot", data.response);
+        }
+
+        function addMessage(sender, text) {
+            const chatBox = document.getElementById("chat-box");
+            const msg = document.createElement("div");
+            msg.innerHTML = `<strong>${sender}:</strong> ${text}`;
+            chatBox.appendChild(msg);
+        }
+    </script>
+</body>
+</html>
