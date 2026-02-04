@@ -2,3 +2,4 @@ Flask
 chatterbot
 chatterbot-corpus
 spacy
+gunicorn #for deployment - production-grade WSGI server
