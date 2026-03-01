@@ -1,53 +1,188 @@
-const chatForm = document.getElementById("chat-form");
-const userInput = document.getElementById("user-input");
-const chatBox = document.getElementById("chat-box");
+// Chat UI script for BuddyBot
 
-chatForm.addEventListener("submit", async function (e) {
-    e.preventDefault();
+const chatForm = document.getElementById("chatForm");
+const chatInput = document.getElementById("chatInput");
+const chatMessages = document.getElementById("chatMessages");
 
-    const message = userInput.value.trim();
-    if (!message) return;
+// Button + spinner references
+const chatBtn = chatForm.querySelector("button");
+const chatBtnText = document.getElementById("chatBtnText");
+const chatSpinner = document.getElementById("chatSpinner");
 
-    addMessage(message, "user");
-    userInput.value = "";
+// Utility: create a chat bubble
+// function createMessageBubble(text, sender = "user") {
+//   const bubble = document.createElement("div");
+//   bubble.className =
+//     sender === "user"
+//       ? "flex justify-end"
+//       : "flex justify-start";
 
-    // // Temporary bot reply (Phase 4 logic later)
-    // setTimeout(() => {
-    //     addMessage("🤖 I'm thinking... (backend coming soon)", "bot");
-    // }, 600);
+//   const inner = document.createElement("div");
+//   inner.className =
+//     sender === "user"
+//       ? "bg-green-600 text-white p-3 rounded-lg max-w-xs animate-fadeIn"
+//       : "bg-gray-700 text-white p-3 rounded-lg max-w-xs animate-fadeIn";
 
-    // Typing indicator
-    const typing = addMessage("BuddyBot is typing...", "bot");
-    try {
-        const response = await fetch("/chat", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ message })
-        });
-        const data = await response.json();
+//   inner.textContent = text;
+//   bubble.appendChild(inner);
+//   return bubble;
+// }
+function createMessageBubble(text, sender = "user") {
+  const wrapper = document.createElement("div");
+  wrapper.className =
+    sender === "user"
+      ? "flex justify-end"
+      : "flex justify-start";
 
-        typing.remove();
-        addMessage(data.reply, "bot");
+  const bubble = document.createElement("div");
+  bubble.className =
+    sender === "user"
+      ? "bg-green-600 text-white p-3 rounded-2xl max-w-2xl whitespace-pre-wrap"
+      : "bg-gray-700 text-white p-3 rounded-2xl max-w-2xl prose prose-invert";
 
-    } catch (error) {
-        typing.remove();
-        addMessage(" Error connecting to server", "bot");
+  if (sender === "bot") {
+    // 🔥 Render Markdown properly
+    bubble.innerHTML = marked.parse(text);
+  } else {
+    bubble.innerText = text;
+  }
+
+  wrapper.appendChild(bubble);
+  return wrapper;
+}
+
+
+
+// Typing indicator
+function showTypingIndicator() {
+  const typing = document.createElement("div");
+  typing.id = "typingIndicator";
+  typing.className = "flex justify-start";
+  typing.innerHTML = `
+    <div class="bg-gray-700 text-white p-3 rounded-lg max-w-xs animate-pulse">
+      ...
+    </div>
+  `;
+  chatMessages.appendChild(typing);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+// Remove typing indicator
+function removeTypingIndicator() {
+  const typing = document.getElementById("typingIndicator");
+  if (typing) typing.remove();
+}
+
+// // Fake AI response (replace with API call later)
+// async function getAIResponse(userMessage) {
+//   // Simulate delay
+//   return new Promise((resolve) => {
+//     setTimeout(() => {
+//       resolve(`You said: "${userMessage}". Let's talk finance! 💹`);
+//     }, 1500);
+//   });
+// }
+// 🔥 REAL AI CALL
+async function getAIResponse(userMessage) {
+  try {
+    const response = await fetch("/chat", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify({ message: userMessage, chat_id: currentChatId }),
+    });
+
+    const data = await response.json();
+
+    currentChatId = data.chat_id;
+    loadConversation();
+    if (!response.ok) {
+      throw new Error(data.error || "Something went wrong");
     }
+
+    return data.reply;
+
+  } catch (error) {
+    return "⚠️ Error: " + error.message;
+  }
+}
+
+// Handle form submit
+chatForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const message = chatInput.value.trim();
+  if (!message) return;
+
+  // Add user bubble
+  chatMessages.appendChild(createMessageBubble(message, "user"));
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+  chatInput.value = "";
+
+  // Show loading state on button
+  chatSpinner.classList.remove("hidden");
+  chatBtnText.textContent = "Sending...";
+  chatBtn.disabled = true;
+
+  // Show typing indicator
+  showTypingIndicator();
+
+  // Get AI response
+  const response = await getAIResponse(message);
+
+  // Remove typing indicator
+  removeTypingIndicator();
+
+  // Add AI bubble
+  chatMessages.appendChild(createMessageBubble(response, "bot"));
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+
+  // Reset loading state
+  chatSpinner.classList.add("hidden");
+  chatBtnText.textContent = "Send";
+  chatBtn.disabled = false;
 });
 
-function addMessage(text, sender) {
-    const msgDiv = document.createElement("div");
-    msgDiv.classList.add("message", sender);
 
-    const p = document.createElement("p");
-    p.textContent = text;
 
-    msgDiv.appendChild(p);
-    chatBox.appendChild(msgDiv);
+//let currentConversationId = null;
+let currentChatId = null;
 
-    chatBox.scrollTop = chatBox.scrollHeight;
+async function loadConversations() {
+  const response = await fetch("/conversations", {
+    credentials: "include",
+  });
+  
+  const data = await response.json();
 
-    return msgDiv;
+  const sidebar = document.querySelector("#conversationList");
+  sidebar.innerHTML = "";
+
+  data.forEach(conv => {
+    const item = document.createElement("div");
+    item.className = "p-2 hover:bg-gray-700 cursor-pointer text-sm border-b border-gray-800";
+    item.innerText = conv.title;
+
+    item.onclick = () => loadConversation(conv.id);
+
+    sidebar.appendChild(item);
+  });
 }
+
+async function loadConversation(id) {
+  const response = await fetch(`/conversations/${id}`, {
+    credentials: "include",
+  });
+  const messages = await response.json();
+
+  //currentConversationId = id;
+  currentChatId = id;
+  chatMessages.innerHTML = "";
+
+  messages.forEach(msg => {
+    chatMessages.appendChild(createMessageBubble(msg.content, msg.role === "assistant" ? "bot" : "user"));
+  });
+}
+
+window.onload = loadConversations;

@@ -1,3 +1,25 @@
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+DATABASE_URL = os.getenv("DATABASE_URL")
+SECRET_KEY = os.getenv("SECRET_KEY")
+
+class Config:
+    SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL")
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SECRET_KEY = os.getenv("SECRET_KEY")
+
+    JWT_SECRET = os.getenv("JWT_SECRET")
+    JWT_EXPIRES_IN = 1800  # 30 minutes
+
+    GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+    GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
+
+    MAIL_SENDER = os.getenv("MAIL_SENDER")
+    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
 # =========================
 # BuddyBot Personality Config
 # =========================

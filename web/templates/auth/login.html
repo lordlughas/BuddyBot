@@ -1,0 +1,136 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<div class="flex items-center justify-center h-screen">
+    <div class="bg-[#202123] p-8 rounded w-96 space-y-4">
+
+        <h2 class="text-2xl text-center">Login</h2>
+
+        <form id="loginForm" class="space-y-4">
+            <input name="email" type="email" placeholder="Email"
+                   class="w-full p-2 bg-gray-700 rounded" required>
+
+            <input name="password" type="password" placeholder="Password"
+                   class="w-full p-2 bg-gray-700 rounded" required>
+
+            <button type="submit" class="w-full bg-green-600 p-2 rounded flex items-center justify-center">
+                <span id="loginSpinner" class="spinner-border spinner-border-sm mr-2 hidden"></span>
+                <span id="loginBtnText">Login</span>
+            </button>
+
+        </form>
+        <div id="loginErrorBox"></div>
+        <div id="loginSuccessBox"></div>
+
+        <p class="text-sm text-center">
+            Don't have an account?
+            <a href="/auth/register-page" class="text-green-500">Register</a>
+        </p>
+        <p class="text-sm text-center">
+            Retrieve Account?
+            <a href="/auth/forgot-password-page" class="text-green-500">Forgot Password?</a>
+        </p>
+
+    </div>
+</div>
+
+<!-- <script>
+document.getElementById("loginForm").addEventListener("submit", async function(e) {
+    e.preventDefault();
+
+    const formData = new FormData(this);
+
+    const res = await fetch("/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            email: formData.get("email"),
+            password: formData.get("password")
+        })
+    });
+
+    const result = await res.json();
+
+
+    // Clear old messages
+    const oldError = document.getElementById("loginErrorBox");
+    const oldSuccess = document.getElementById("loginSuccessBox");
+    if (oldError) oldError.remove();
+    if (oldSuccess) oldSuccess.remove();
+
+    if (res.ok) {
+        const div = document.createElement("div");
+        div.id = "loginSuccessBox";
+        div.className = "alert alert-success mt-3";
+        div.textContent = result.message || "Login successful!";
+        this.parentNode.appendChild(div);
+
+        // Redirect after short delay
+        setTimeout(() => {
+            window.location.href = "/chat";
+        }, 1500);
+    } else {
+        const div = document.createElement("div");
+        div.id = "loginErrorBox";
+        div.className = "alert alert-danger mt-3";
+        div.textContent = result.error || "Login failed";
+        this.parentNode.appendChild(div);
+    }
+
+
+
+});
+</script> -->
+
+
+<script>
+const loginForm = document.getElementById("loginForm");
+const loginBtnText = document.getElementById("loginBtnText");
+const loginSpinner = document.getElementById("loginSpinner");
+
+loginForm.addEventListener("submit", async function(e) {
+    e.preventDefault();
+
+    const formData = new FormData(this);
+
+    // Show loading state
+    loginSpinner.classList.remove("hidden");
+    loginBtnText.textContent = "Logging in...";
+    loginForm.querySelector("button").disabled = true;
+
+    const res = await fetch("/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+            email: formData.get("email"),
+            password: formData.get("password")
+        })
+    });
+
+    const result = await res.json();
+
+    // Clear old messages
+    document.getElementById("loginErrorBox").innerHTML = "";
+    document.getElementById("loginSuccessBox").innerHTML = "";
+
+    if (res.ok) {
+        document.getElementById("loginSuccessBox").innerHTML =
+            `<div class="alert alert-success">${result.message || "Login successful!"}</div>`;
+        setTimeout(() => {
+            window.location.href = "/chat";
+        }, 1500);
+    } else {
+        document.getElementById("loginErrorBox").innerHTML =
+            `<div class="alert alert-danger">${result.error || "Login failed"}</div>`;
+    }
+
+    // Reset loading state
+    loginSpinner.classList.add("hidden");
+    loginBtnText.textContent = "Login";
+    loginForm.querySelector("button").disabled = false;
+});
+</script>
+
+
+{% endblock %}

@@ -1,0 +1,92 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<div class="flex h-screen bg-[#0f172a] text-white">
+
+  <!-- ===================== -->
+  <!-- SIDEBAR (ChatGPT Style) -->
+  <!-- ===================== -->
+  <aside class="w-64 bg-[#111827] flex flex-col border-r border-gray-800">
+
+    <!-- Top Section -->
+    <div class="p-4">
+      <button class="w-full bg-gray-700 hover:bg-gray-600 transition p-2 rounded-lg text-sm font-medium">
+        + New Chat
+      </button>
+    </div>
+
+    <!-- Conversation List -->
+    <div class="flex-1 overflow-y-auto px-2 space-y-1">
+
+      <!-- Conversation Item -->
+      <div class="p-2 rounded-lg hover:bg-gray-700 cursor-pointer text-sm border-b border-gray-800">
+        Stock Market Advice
+      </div>
+
+      <div class="p-2 rounded-lg hover:bg-gray-700 cursor-pointer text-sm border-b border-gray-800">
+        Budget Planning 2026
+      </div>
+
+      <div class="p-2 rounded-lg hover:bg-gray-700 cursor-pointer text-sm border-b border-gray-800">
+        Investment Strategies
+      </div>
+
+    </div>
+
+    <!-- Bottom Profile Section -->
+    <div class="p-4 border-t border-gray-800 flex items-center space-x-3 hover:bg-gray-800 cursor-pointer" onclick="window.location.href='/settings'">
+      <img src="https://i.pravatar.cc/40"
+           class="w-8 h-8 rounded-full" />
+
+      <div class="text-sm">
+        <div class="font-medium">John Doe</div>
+        <div class="text-gray-400 text-xs">Premium Plan</div>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- ===================== -->
+  <!-- MAIN CHAT AREA -->
+  <!-- ===================== -->
+  <main class="flex-1 flex flex-col">
+
+    <!-- Header -->
+    <header class="p-4 border-b border-gray-800 text-lg font-semibold">
+      Finsight AI
+    </header>
+
+    <!-- Chat Messages -->
+    <div id="chatMessages"
+         class="flex-1 overflow-y-auto p-6 space-y-6">
+
+      <!-- Messages dynamically inserted here -->
+
+    </div>
+
+    <!-- Chat Input Area -->
+    <div class="border-t border-gray-800 p-4 bg-[#0f172a]">
+      <form id="chatForm" class="max-w-3xl mx-auto relative">
+
+        <input id="chatInput"
+               type="text"
+               placeholder="Message BuddyBot..."
+               class="w-full bg-[#1f2937] text-white rounded-xl p-4 pr-20 focus:outline-none focus:ring-2 focus:ring-green-500"/>
+
+        <button type="submit"
+                class="absolute right-3 top-3 bg-green-600 hover:bg-green-500 transition px-4 py-2 rounded-lg text-sm">
+                <span id="chatSpinner" class="spinner-border spinner-border-sm mr-2 hidden"></span>
+            <span id="chatBtnText">Send</span>
+        </button>
+
+      </form>
+    </div>
+
+  </main>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="/static/js/chat.js"></script>
+
+{% endblock %}

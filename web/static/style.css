@@ -25,3 +25,15 @@ input {
 button {
     padding: 8px;
 }
+
+pre {
+  background: #111827;
+  padding: 12px;
+  border-radius: 8px;
+  overflow-x: auto;
+}
+
+code {
+  color: #22d3ee;
+}
+
