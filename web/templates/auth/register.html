@@ -62,28 +62,33 @@ registerForm.addEventListener("submit", async function(e) {
   registerBtnText.textContent = "Registering...";
   registerBtn.disabled = true;
 
-  const res = await fetch("/auth/register", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      full_name: formData.get("full_name"),
-      email: formData.get("email"),
-      password: formData.get("password")
-    })
-  });
+  try {
+    const res = await fetch("/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        full_name: formData.get("full_name"),
+        email: formData.get("email"),
+        password: formData.get("password")
+      })
+    });
 
+    const result = await res.json().catch(() => ({}));
+    document.getElementById("registerErrorBox").innerHTML = "";
+    document.getElementById("registerSuccessBox").innerHTML = "";
 
-const result = await res.json();
-document.getElementById("registerErrorBox").innerHTML = "";
-  document.getElementById("registerSuccessBox").innerHTML = "";
-
-  if (res.ok) {
-    document.getElementById("registerSuccessBox").innerHTML =
-      `<div class="alert alert-success">${result.message || "Registered successfully!"}</div>`;
-    setTimeout(() => window.location.href = "/chat", 1500);
-  } else {
+    if (res.ok) {
+      document.getElementById("registerSuccessBox").innerHTML =
+        `<div class="alert alert-success">${result.message || "Registered successfully!"}</div>`;
+      setTimeout(() => window.location.href = "/chat", 700);
+    } else {
+      document.getElementById("registerErrorBox").innerHTML =
+        `<div class="alert alert-danger">${result.error || "Registration failed"}</div>`;
+    }
+  } catch (error) {
     document.getElementById("registerErrorBox").innerHTML =
-      `<div class="alert alert-danger">${result.error || "Registration failed"}</div>`;
+      `<div class="alert alert-danger">Network error. Please try again.</div>`;
   }
 
   // Reset state

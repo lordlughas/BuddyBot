@@ -10,40 +10,33 @@
 
     <!-- Top Section -->
     <div class="p-4">
-      <button class="w-full bg-gray-700 hover:bg-gray-600 transition p-2 rounded-lg text-sm font-medium">
+      <button id="newChatBtn" class="w-full bg-gray-700 hover:bg-gray-600 transition p-2 rounded-lg text-sm font-medium">
         + New Chat
       </button>
     </div>
 
     <!-- Conversation List -->
-    <div class="flex-1 overflow-y-auto px-2 space-y-1">
-
-      <!-- Conversation Item -->
-      <div class="p-2 rounded-lg hover:bg-gray-700 cursor-pointer text-sm border-b border-gray-800">
-        Stock Market Advice
-      </div>
-
-      <div class="p-2 rounded-lg hover:bg-gray-700 cursor-pointer text-sm border-b border-gray-800">
-        Budget Planning 2026
-      </div>
-
-      <div class="p-2 rounded-lg hover:bg-gray-700 cursor-pointer text-sm border-b border-gray-800">
-        Investment Strategies
-      </div>
-
+    <div id="conversationList" class="flex-1 overflow-y-auto px-2 space-y-1">
     </div>
 
     <!-- Bottom Profile Section -->
-    <div class="p-4 border-t border-gray-800 flex items-center space-x-3 hover:bg-gray-800 cursor-pointer" onclick="window.location.href='/settings'">
-      <img src="https://i.pravatar.cc/40"
-           class="w-8 h-8 rounded-full" />
+    <div class="p-4 border-t border-gray-800 space-y-3">
+      <div class="flex items-center space-x-3 hover:bg-gray-800 cursor-pointer rounded-lg p-2" onclick="window.location.href='/settings'">
+        <img src="https://i.pravatar.cc/40"
+             class="w-8 h-8 rounded-full" />
 
-      <div class="text-sm">
-        <div class="font-medium">John Doe</div>
-        <div class="text-gray-400 text-xs">Premium Plan</div>
+        <div class="text-sm">
+          <div class="font-medium">{{ current_user.full_name or "User" }}</div>
+          <div class="text-gray-400 text-xs">Free Plan</div>
+        </div>
       </div>
-    </div>
 
+      <form method="POST" action="/auth/logout">
+        <button type="submit" class="w-full text-sm bg-gray-700 hover:bg-gray-600 transition p-2 rounded-lg">
+          Sign out
+        </button>
+      </form>
+    </div>
   </aside>
 
   <!-- ===================== -->
@@ -66,18 +59,27 @@
 
     <!-- Chat Input Area -->
     <div class="border-t border-gray-800 p-4 bg-[#0f172a]">
+      <div class="max-w-3xl mx-auto mb-3">
+        <div id="suggestionsBar" class="flex flex-wrap gap-2"></div>
+      </div>
       <form id="chatForm" class="max-w-3xl mx-auto relative">
 
-        <input id="chatInput"
-               type="text"
-               placeholder="Message BuddyBot..."
-               class="w-full bg-[#1f2937] text-white rounded-xl p-4 pr-20 focus:outline-none focus:ring-2 focus:ring-green-500"/>
+        <textarea id="chatInput"
+               rows="1"
+               placeholder="Ask finance questions (budgeting, investing, debt, retirement)..."
+               class="w-full resize-none overflow-y-auto bg-[#1f2937] text-white rounded-xl p-4 pr-24 focus:outline-none focus:ring-2 focus:ring-green-500"></textarea>
 
-        <button type="submit"
-                class="absolute right-3 top-3 bg-green-600 hover:bg-green-500 transition px-4 py-2 rounded-lg text-sm">
-                <span id="chatSpinner" class="spinner-border spinner-border-sm mr-2 hidden"></span>
-            <span id="chatBtnText">Send</span>
-        </button>
+        <div class="absolute right-3 bottom-3 flex items-center gap-2">
+          <button id="stopBtn" type="button"
+                  class="hidden bg-red-600 hover:bg-red-500 transition px-4 py-2 rounded-lg text-sm">
+            Stop
+          </button>
+          <button type="submit"
+                  class="bg-green-600 hover:bg-green-500 transition px-4 py-2 rounded-lg text-sm">
+                  <span id="chatSpinner" class="spinner-border spinner-border-sm mr-2 hidden"></span>
+              <span id="chatBtnText">Send</span>
+          </button>
+        </div>
 
       </form>
     </div>
@@ -87,6 +89,5 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-<script src="/static/js/chat.js"></script>
 
 {% endblock %}

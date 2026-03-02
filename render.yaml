@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: finsight-ai
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn run:app
+    healthCheckPath: /auth/login-page
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.13
+      - key: DATABASE_URL
+        sync: false
+      - key: SECRET_KEY
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: MOCK_EMAIL_ENABLED
+        value: "true"
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: SESSION_COOKIE_SAMESITE
+        value: "Lax"

@@ -1,38 +1,25 @@
-// Chat UI script for BuddyBot
-
 const chatForm = document.getElementById("chatForm");
 const chatInput = document.getElementById("chatInput");
 const chatMessages = document.getElementById("chatMessages");
+const conversationList = document.getElementById("conversationList");
+const newChatBtn = document.getElementById("newChatBtn");
+const suggestionsBar = document.getElementById("suggestionsBar");
 
-// Button + spinner references
-const chatBtn = chatForm.querySelector("button");
+if (!chatForm || !chatInput || !chatMessages) {
+  // This script is loaded globally from layout.html; no-op outside chat screen.
+} else {
+const chatBtn = chatForm.querySelector("button[type='submit']");
 const chatBtnText = document.getElementById("chatBtnText");
 const chatSpinner = document.getElementById("chatSpinner");
+const stopBtn = document.getElementById("stopBtn");
 
-// Utility: create a chat bubble
-// function createMessageBubble(text, sender = "user") {
-//   const bubble = document.createElement("div");
-//   bubble.className =
-//     sender === "user"
-//       ? "flex justify-end"
-//       : "flex justify-start";
+let currentChatId = null;
+let isStreaming = false;
+let streamController = null;
 
-//   const inner = document.createElement("div");
-//   inner.className =
-//     sender === "user"
-//       ? "bg-green-600 text-white p-3 rounded-lg max-w-xs animate-fadeIn"
-//       : "bg-gray-700 text-white p-3 rounded-lg max-w-xs animate-fadeIn";
-
-//   inner.textContent = text;
-//   bubble.appendChild(inner);
-//   return bubble;
-// }
 function createMessageBubble(text, sender = "user") {
   const wrapper = document.createElement("div");
-  wrapper.className =
-    sender === "user"
-      ? "flex justify-end"
-      : "flex justify-start";
+  wrapper.className = sender === "user" ? "flex justify-end" : "flex justify-start";
 
   const bubble = document.createElement("div");
   bubble.className =
@@ -41,133 +28,95 @@ function createMessageBubble(text, sender = "user") {
       : "bg-gray-700 text-white p-3 rounded-2xl max-w-2xl prose prose-invert";
 
   if (sender === "bot") {
-    // 🔥 Render Markdown properly
-    bubble.innerHTML = marked.parse(text);
+    bubble.innerHTML = marked.parse(text || "");
   } else {
-    bubble.innerText = text;
+    bubble.innerText = text || "";
   }
 
   wrapper.appendChild(bubble);
-  return wrapper;
+  return { wrapper, bubble };
 }
 
-
-
-// Typing indicator
-function showTypingIndicator() {
-  const typing = document.createElement("div");
-  typing.id = "typingIndicator";
-  typing.className = "flex justify-start";
-  typing.innerHTML = `
-    <div class="bg-gray-700 text-white p-3 rounded-lg max-w-xs animate-pulse">
-      ...
-    </div>
-  `;
-  chatMessages.appendChild(typing);
-  chatMessages.scrollTop = chatMessages.scrollHeight;
-}
-
-// Remove typing indicator
-function removeTypingIndicator() {
-  const typing = document.getElementById("typingIndicator");
-  if (typing) typing.remove();
-}
-
-// // Fake AI response (replace with API call later)
-// async function getAIResponse(userMessage) {
-//   // Simulate delay
-//   return new Promise((resolve) => {
-//     setTimeout(() => {
-//       resolve(`You said: "${userMessage}". Let's talk finance! 💹`);
-//     }, 1500);
-//   });
-// }
-// 🔥 REAL AI CALL
-async function getAIResponse(userMessage) {
-  try {
-    const response = await fetch("/chat", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-      body: JSON.stringify({ message: userMessage, chat_id: currentChatId }),
-    });
-
-    const data = await response.json();
-
-    currentChatId = data.chat_id;
-    loadConversation();
-    if (!response.ok) {
-      throw new Error(data.error || "Something went wrong");
-    }
-
-    return data.reply;
-
-  } catch (error) {
-    return "⚠️ Error: " + error.message;
+function setSendingState(sending) {
+  isStreaming = sending;
+  chatSpinner.classList.toggle("hidden", !sending);
+  chatBtnText.textContent = sending ? "Generating..." : "Send";
+  chatBtn.disabled = sending;
+  if (stopBtn) {
+    stopBtn.classList.toggle("hidden", !sending);
   }
 }
 
-// Handle form submit
-chatForm.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const message = chatInput.value.trim();
-  if (!message) return;
+function adjustInputHeight() {
+  chatInput.style.height = "auto";
+  chatInput.style.height = `${Math.min(chatInput.scrollHeight, 180)}px`;
+}
 
-  // Add user bubble
-  chatMessages.appendChild(createMessageBubble(message, "user"));
+function scrollToBottom() {
   chatMessages.scrollTop = chatMessages.scrollHeight;
-  chatInput.value = "";
+}
 
-  // Show loading state on button
-  chatSpinner.classList.remove("hidden");
-  chatBtnText.textContent = "Sending...";
-  chatBtn.disabled = true;
+function createSuggestionChip(text) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className =
+    "px-3 py-1.5 rounded-full text-xs bg-gray-700 hover:bg-gray-600 transition border border-gray-600";
+  button.innerText = text;
+  button.addEventListener("click", () => {
+    chatInput.value = text;
+    adjustInputHeight();
+    chatInput.focus();
+  });
+  return button;
+}
 
-  // Show typing indicator
-  showTypingIndicator();
+function renderSuggestions(suggestions) {
+  if (!suggestionsBar) return;
+  suggestionsBar.innerHTML = "";
+  if (!Array.isArray(suggestions) || suggestions.length === 0) return;
+  suggestions.forEach((suggestion) => suggestionsBar.appendChild(createSuggestionChip(suggestion)));
+}
 
-  // Get AI response
-  const response = await getAIResponse(message);
-
-  // Remove typing indicator
-  removeTypingIndicator();
-
-  // Add AI bubble
-  chatMessages.appendChild(createMessageBubble(response, "bot"));
-  chatMessages.scrollTop = chatMessages.scrollHeight;
-
-  // Reset loading state
-  chatSpinner.classList.add("hidden");
-  chatBtnText.textContent = "Send";
-  chatBtn.disabled = false;
-});
-
-
-
-//let currentConversationId = null;
-let currentChatId = null;
-
-async function loadConversations() {
-  const response = await fetch("/conversations", {
+async function loadPromptSuggestions(chatId = null) {
+  const query = chatId ? `?chat_id=${chatId}` : "";
+  const response = await fetch(`/prompt-suggestions${query}`, {
     credentials: "include",
   });
-  
+  const data = await response.json();
+  if (!response.ok) return;
+  renderSuggestions(data.suggestions || []);
+}
+
+function buildConversationItem(conv) {
+  const item = document.createElement("button");
+  item.type = "button";
+  item.className = [
+    "w-full text-left p-2 rounded-lg cursor-pointer text-sm border-b border-gray-800",
+    "hover:bg-gray-700 transition",
+    conv.id === currentChatId ? "bg-gray-700" : "",
+  ].join(" ");
+
+  item.innerText = conv.title || "New Chat";
+  item.onclick = () => loadConversation(conv.id);
+  return item;
+}
+
+async function loadConversations() {
+  const response = await fetch("/conversations", { credentials: "include" });
   const data = await response.json();
 
-  const sidebar = document.querySelector("#conversationList");
-  sidebar.innerHTML = "";
+  if (!conversationList) return;
+  conversationList.innerHTML = "";
 
-  data.forEach(conv => {
-    const item = document.createElement("div");
-    item.className = "p-2 hover:bg-gray-700 cursor-pointer text-sm border-b border-gray-800";
-    item.innerText = conv.title;
+  if (!Array.isArray(data) || data.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "p-3 text-sm text-gray-400";
+    empty.innerText = "No chats yet";
+    conversationList.appendChild(empty);
+    return;
+  }
 
-    item.onclick = () => loadConversation(conv.id);
-
-    sidebar.appendChild(item);
-  });
+  data.forEach((conv) => conversationList.appendChild(buildConversationItem(conv)));
 }
 
 async function loadConversation(id) {
@@ -175,14 +124,124 @@ async function loadConversation(id) {
     credentials: "include",
   });
   const messages = await response.json();
+  if (!response.ok) return;
 
-  //currentConversationId = id;
   currentChatId = id;
   chatMessages.innerHTML = "";
 
-  messages.forEach(msg => {
-    chatMessages.appendChild(createMessageBubble(msg.content, msg.role === "assistant" ? "bot" : "user"));
+  messages.forEach((msg) => {
+    const sender = msg.role === "assistant" ? "bot" : "user";
+    const bubble = createMessageBubble(msg.content, sender);
+    chatMessages.appendChild(bubble.wrapper);
+  });
+
+  await loadConversations();
+  await loadPromptSuggestions(id);
+  scrollToBottom();
+}
+
+async function streamAIResponse(userMessage, assistantBubble, signal) {
+  const response = await fetch("/chat/stream", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ message: userMessage, chat_id: currentChatId }),
+    signal,
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || "Streaming failed");
+  }
+
+  const returnedChatId = Number(response.headers.get("X-Chat-Id"));
+  if (returnedChatId) {
+    currentChatId = returnedChatId;
+    await loadConversations();
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder("utf-8");
+  let fullText = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    const token = decoder.decode(value, { stream: true });
+    fullText += token;
+    assistantBubble.innerHTML = marked.parse(fullText);
+    scrollToBottom();
+  }
+
+  return fullText;
+}
+
+chatForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  if (isStreaming) return;
+
+  const message = chatInput.value.trim();
+  if (!message) return;
+
+  const user = createMessageBubble(message, "user");
+  chatMessages.appendChild(user.wrapper);
+  scrollToBottom();
+
+  chatInput.value = "";
+  adjustInputHeight();
+  setSendingState(true);
+
+  const assistant = createMessageBubble("", "bot");
+  chatMessages.appendChild(assistant.wrapper);
+  scrollToBottom();
+
+  try {
+    streamController = new AbortController();
+    await streamAIResponse(message, assistant.bubble, streamController.signal);
+    await loadPromptSuggestions(currentChatId);
+  } catch (error) {
+    if (error.name === "AbortError") {
+      // User intentionally stopped generation; keep partial streamed text as-is.
+    } else {
+      assistant.bubble.innerText = "Error: " + error.message;
+    }
+  } finally {
+    streamController = null;
+    setSendingState(false);
+  }
+});
+
+chatInput.addEventListener("input", adjustInputHeight);
+chatInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    chatForm.requestSubmit();
+  }
+});
+
+if (newChatBtn) {
+  newChatBtn.addEventListener("click", async () => {
+    if (isStreaming) return;
+    currentChatId = null;
+    chatMessages.innerHTML = "";
+    await loadConversations();
+    await loadPromptSuggestions();
+    chatInput.focus();
   });
 }
 
-window.onload = loadConversations;
+if (stopBtn) {
+  stopBtn.addEventListener("click", () => {
+    if (streamController && isStreaming) {
+      streamController.abort();
+    }
+  });
+}
+
+window.addEventListener("DOMContentLoaded", async () => {
+  adjustInputHeight();
+  await loadConversations();
+  await loadPromptSuggestions();
+});
+}
