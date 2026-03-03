@@ -1,0 +1,41 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="min-h-screen bg-[#0f172a] text-white p-6">
+  <div class="max-w-3xl mx-auto">
+    <div class="flex items-center justify-between mb-6">
+      <h1 class="text-2xl font-bold">Settings</h1>
+      <div class="flex items-center gap-2">
+        <a href="/chat" class="text-sm bg-gray-700 hover:bg-gray-600 px-3 py-2 rounded-lg">Back to Chat</a>
+        <form method="POST" action="/auth/logout">
+          <button type="submit" class="text-sm bg-red-600 hover:bg-red-500 px-3 py-2 rounded-lg">Sign out</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="bg-[#111827] border border-gray-800 rounded-xl p-6">
+      <h2 class="text-lg font-semibold mb-4">Profile</h2>
+
+      <div class="flex items-center gap-4 mb-6">
+        <div class="w-14 h-14 rounded-full bg-gray-700 flex items-center justify-center text-lg font-semibold">
+          {{ (current_user.full_name or current_user.email)[0] | upper }}
+        </div>
+        <div>
+          <p class="text-base font-medium">{{ current_user.full_name or "User" }}</p>
+          <p class="text-sm text-gray-400">{{ current_user.email }}</p>
+        </div>
+      </div>
+
+      <div class="grid gap-3">
+        <div class="bg-[#1f2937] rounded-lg p-4">
+          <p class="text-sm text-gray-400">Plan</p>
+          <p class="font-medium">Free Plan</p>
+        </div>
+        <div class="bg-[#1f2937] rounded-lg p-4">
+          <p class="text-sm text-gray-400">Authentication</p>
+          <p class="font-medium capitalize">{{ current_user.auth_provider or "local" }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

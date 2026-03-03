@@ -1,3 +1,34 @@
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+DATABASE_URL = os.getenv("DATABASE_URL")
+SECRET_KEY = os.getenv("SECRET_KEY")
+
+class Config:
+    SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL")
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SECRET_KEY = os.getenv("SECRET_KEY")
+    DEBUG = os.getenv("DEBUG", "false").lower() == "true"
+    TESTING = False
+
+    JWT_SECRET = os.getenv("JWT_SECRET")
+    JWT_EXPIRES_IN = 1800  # 30 minutes
+
+    GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+    GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
+
+    MAIL_SENDER = os.getenv("MAIL_SENDER")
+    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+    MOCK_EMAIL_ENABLED = os.getenv("MOCK_EMAIL_ENABLED", "true").lower() == "true"
+
+    # Production-safe defaults (override to false locally if needed).
+    COOKIE_SECURE = os.getenv("COOKIE_SECURE", "true").lower() == "true"
+    SESSION_COOKIE_SECURE = COOKIE_SECURE
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = os.getenv("SESSION_COOKIE_SAMESITE", "Lax")
+
 # =========================
 # BuddyBot Personality Config
 # =========================

@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="row justify-content-center">
+    <div class="col-md-5">
+        <div class="card shadow-sm">
+            <div class="card-body">
+
+                <h3 class="text-center mb-4">Create Account</h3>
+
+                <form id="registerForm">
+                    <div class="mb-3">
+                        <label>Full Name</label>
+                        <input type="text" class="form-control" name="full_name" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label>Email</label>
+                        <input type="email" class="form-control" name="email" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label>Password</label>
+                        <input type="password" class="form-control" name="password" required>
+                    </div>
+
+                    <!-- <button class="btn btn-success w-100">Register</button> -->
+                     <button class="btn btn-success w-100 flex items-center justify-center">
+                        <span id="registerSpinner" class="spinner-border spinner-border-sm mr-2 hidden"></span>
+                        <span id="registerBtnText">Register</span>
+                    </button>
+
+                </form>
+
+                <hr>
+
+                <div class="text-center">
+                    <a href="/auth/login-page">Already have an account? Login</a>
+                </div>
+                <div id="registerErrorBox"></div>
+                <div id="registerSuccessBox"></div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+const registerForm = document.getElementById("registerForm");
+const registerBtn = registerForm.querySelector("button");
+const registerBtnText = document.getElementById("registerBtnText");
+const registerSpinner = document.getElementById("registerSpinner");
+
+
+registerForm.addEventListener("submit", async function(e) {
+  e.preventDefault();
+
+  const formData = new FormData(this);
+
+  // Loading state
+  registerSpinner.classList.remove("hidden");
+  registerBtnText.textContent = "Registering...";
+  registerBtn.disabled = true;
+
+  try {
+    const res = await fetch("/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        full_name: formData.get("full_name"),
+        email: formData.get("email"),
+        password: formData.get("password")
+      })
+    });
+
+    const result = await res.json().catch(() => ({}));
+    document.getElementById("registerErrorBox").innerHTML = "";
+    document.getElementById("registerSuccessBox").innerHTML = "";
+
+    if (res.ok) {
+      document.getElementById("registerSuccessBox").innerHTML =
+        `<div class="alert alert-success">${result.message || "Registered successfully!"}</div>`;
+      setTimeout(() => window.location.href = "/chat", 700);
+    } else {
+      document.getElementById("registerErrorBox").innerHTML =
+        `<div class="alert alert-danger">${result.error || "Registration failed"}</div>`;
+    }
+  } catch (error) {
+    document.getElementById("registerErrorBox").innerHTML =
+      `<div class="alert alert-danger">Network error. Please try again.</div>`;
+  }
+
+  // Reset state
+  registerSpinner.classList.add("hidden");
+  registerBtnText.textContent = "Register";
+  registerBtn.disabled = false;
+});
+
+    
+</script>
+
+{% endblock %}
