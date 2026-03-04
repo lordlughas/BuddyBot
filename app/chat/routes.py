@@ -1,4 +1,4 @@
-from flask import Blueprint, request, render_template, jsonify, Response, stream_with_context
+from flask import Blueprint, request, render_template, jsonify, Response, stream_with_context, redirect
 from flask_login import login_required, current_user
 
 from app.ai.openai_client import get_ai_response, stream_ai_response
@@ -10,6 +10,28 @@ from app.models.message import Message
 
 
 chat_bp = Blueprint("chat", __name__)
+
+
+@chat_bp.route("/", methods=["GET"])
+def home_page():
+    if current_user.is_authenticated:
+        return redirect("/chat")
+    return render_template("home.html")
+
+
+@chat_bp.route("/privacy", methods=["GET"])
+def privacy_page():
+    return render_template("privacy.html")
+
+
+@chat_bp.route("/terms", methods=["GET"])
+def terms_page():
+    return render_template("terms.html")
+
+
+@chat_bp.route("/contact", methods=["GET"])
+def contact_page():
+    return render_template("contact.html")
 
 
 @chat_bp.route("/chat", methods=["GET"])
